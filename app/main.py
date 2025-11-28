@@ -1,0 +1,43 @@
+"""
+Main FastAPI application module.
+Sets up the application with all routers, middleware, and configuration.
+"""
+from fastapi import FastAPI
+
+from app.config import settings
+
+
+# Create FastAPI application
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+)
+
+@app.get("/", tags=["Root"])
+async def root():
+    """
+    Root endpoint providing API information.
+    """
+    return {
+        "message": f"Welcome to {settings.APP_NAME}",
+        "version": settings.APP_VERSION,
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "health": f"{settings.API_V1_PREFIX}/admin/health"
+    }
+
+
+@app.get("/health", tags=["Health"])
+async def health():
+    """Simple health check endpoint."""
+    return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.DEBUG
+    )
