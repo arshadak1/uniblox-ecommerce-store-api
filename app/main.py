@@ -2,9 +2,19 @@
 Main FastAPI application module.
 Sets up the application with all routers, middleware, and configuration.
 """
+import logging
 from fastapi import FastAPI
 
 from app.config import settings
+
+
+# logging config
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
 
 
 # Create FastAPI application
