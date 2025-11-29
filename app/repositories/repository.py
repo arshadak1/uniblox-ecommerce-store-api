@@ -6,7 +6,8 @@ import threading
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
-from app.models.schema import CartItem, Order, UserOrder, User, UserDiscountData, Discount, UsedDiscount
+from app.models.schema import CartItem, Order, UserOrder, User, UserDiscountData, Discount, UsedDiscount, \
+    AdminStoreStatisticsResponse
 
 
 class UnibloxRepository:
@@ -33,8 +34,9 @@ class UnibloxRepository:
 
     def add_user(self, session_id: str):
         if self._users.get(session_id):
+            print("already")
             return
-        self._users[session_id] = User(session_id=session_id, date_created=datetime.now(), discount_code=None)
+        self._users[session_id] = User(session_id=session_id, date_created=datetime.now())
     
     def get_cart(self, session_id: str) -> List[CartItem]:
         """Get cart items for a session."""
@@ -78,7 +80,7 @@ class UnibloxRepository:
 
             self._carts[session_id] = [
                 item for item in self._carts[session_id]
-                if item['product_id'] != product_id
+                if item.product_id != product_id
             ]
             return self._carts[session_id].copy()
 
@@ -132,8 +134,66 @@ class UnibloxRepository:
             if session_id not in self._discount_codes:
                 self._discount_codes[session_id] = UserDiscountData(available_discount=None,
                                                                     used_discounts=[])
-            self._discount_codes[session_id].available_discount = Discount(discount_code=discount_code,
-                                                                           discount_percent=discount_percent)
+            if self._discount_codes[session_id].available_discount is None:
+                self._discount_codes[session_id].available_discount = Discount(discount_code=discount_code,
+                                                                               discount_percent=discount_percent)
+            return self._discount_codes[session_id].available_discount.discount_code
+
+    def get_statistics(self) -> AdminStoreStatisticsResponse:
+        """
+        Calculate comprehensive statistics.
+
+        Returns:
+            Dictionary containing various statistics
+        """
+        with self._order_lock, self._discount_lock:
+            orders = []
+            total_orders = 0
+            total_items = 0
+
+            for entry in self._orders.values():
+                # order_count (safe even if None)
+                total_orders += entry.order_count or 0
+
+                # orders list (safe even if None)
+                user_orders = entry.orders or []
+                total_items += len(user_orders)
+                orders.extend(user_orders)
+
+            # Now compute totals across all collected orders
+            total_amount = sum(o.total_amount for o in orders)
+            total_discount = sum(o.discount_amount for o in orders)
+
+            avg_order_value = total_amount / total_orders if total_orders else 0.0
+
+            total_discounts = 0
+            used_discounts = 0
+            discount_codes = []
+            for discount_data in self._discount_codes.values():
+                if discount_data.available_discount:
+                    total_discounts += 1
+                    discount_codes.append(discount_data.available_discount.discount_code)
+
+                total_discounts += len(discount_data.used_discounts or [])
+                used_discounts += len(discount_data.used_discounts or [])
+                for discount in discount_data.used_discounts:
+                    discount_codes.append(discount.discount_code)
+
+            utilization_rate = (used_discounts / total_discounts * 100) if total_discounts > 0 else 0.0
+
+            return AdminStoreStatisticsResponse(
+                total_orders=total_orders,
+                total_items_purchased=total_items,
+                total_purchase_amount=round(total_amount, 2),
+                total_discount_amount=round(total_discount, 2),
+                average_order_value=round(avg_order_value, 2),
+                discount_utilization_rate=round(utilization_rate, 2),
+                discount_codes=discount_codes
+            )
+
+    def get_users(self) -> List[User]:
+        return self._users.values()
+
 
 # Global repository instance
 repository = UnibloxRepository()

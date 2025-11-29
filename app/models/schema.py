@@ -57,7 +57,7 @@ class UpdateCartRequest(BaseModel):
 # Checkout Related Models
 class CheckoutRequest(BaseModel):
     """Request model for checkout."""
-    discount_code: Optional[str] = Field(None, max_length=50)
+    discount_code: Optional[str] | None = Field(None, max_length=50)
 
     @field_validator('discount_code')
     @classmethod
@@ -110,3 +110,22 @@ class Discount(BaseModel):
 class UserDiscountData(BaseModel):
     available_discount: Optional[Discount]
     used_discounts: List[UsedDiscount]
+
+
+class AdminStoreStatisticsResponse(BaseModel):
+    total_orders: int
+    total_items_purchased: int
+    average_order_value: float
+    total_purchase_amount: float
+    total_discount_amount: float
+    discount_utilization_rate: float
+    discount_codes: List[str]
+
+
+class GenerateDiscountResponse(BaseModel):
+    discount_code: str
+    message: str
+
+
+class GenerateDiscountRequest(BaseModel):
+    session_id: str

@@ -161,7 +161,7 @@ class CheckoutService:
         user_order = repository.get_user_orders(session_id)
         if user_order and user_order.order_count % self.nth_order == 0:
             discount_code = DiscountService.generate_discount_code()
-            self.repository.create_discount_code(session_id, discount_code, self.discount_percentage)
+            discount_code = self.repository.create_discount_code(session_id, discount_code, self.discount_percentage)
 
             logger.info(
                 f"Discount code generated: {discount_code}"
@@ -197,7 +197,7 @@ class DiscountService:
         discount_code = self.generate_discount_code()
 
         # Store it
-        self.repository.create_discount_code(session_id, discount_code, self.discount_percentage)
+        discount_code = self.repository.create_discount_code(session_id, discount_code, self.discount_percentage)
 
         logger.info(f"Discount code generated: {discount_code}")
 
