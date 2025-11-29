@@ -96,6 +96,31 @@ class CartService:
 
         return self._build_cart_response(cart_items)
 
+    def remove_from_cart(self, session_id: str, product_id: int) -> CartResponse:
+        """
+        Remove an item from the cart.
+
+        Args:
+            session_id: User session identifier
+            product_id: Product ID to remove
+
+        Returns:
+            Updated cart response
+
+        Raises:
+            ValueError: If item not found in cart
+        """
+        logger.info(
+            f"Removing from cart - Session: {session_id}, Product: {product_id}"
+        )
+
+        cart_items = self.repository.remove_from_cart(session_id, product_id)
+
+        if cart_items is None:
+            raise ValueError(f"Product {product_id} not found in cart")
+
+        return self._build_cart_response(cart_items)
+
     def _build_cart_response(self, cart_items: List[Dict]) -> CartResponse:
         """
         Build a CartResponse from raw cart data.

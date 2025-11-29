@@ -50,6 +50,17 @@ class UnibloxRepository:
 
             return None
 
+    def remove_from_cart(self, session_id: str, product_id: int) -> Optional[List[Dict]]:
+        """Remove an item from cart."""
+        with self._cart_lock:
+            if session_id not in self._carts:
+                return None
+
+            self._carts[session_id] = [
+                item for item in self._carts[session_id]
+                if item['product_id'] != product_id
+            ]
+            return self._carts[session_id].copy()
 
 # Global repository instance
 repository = UnibloxRepository()

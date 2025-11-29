@@ -90,3 +90,21 @@ async def update_cart_item(request: UpdateCartRequest, cart_service: Annotated[C
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/remove/{product_id}", response_model=CartResponse)
+async def remove_from_cart(product_id: int, cart_service: Annotated[CartService, Depends(get_cart_service)],
+                           session_id: Annotated[str, Depends(get_session_id)]) -> CartResponse:
+    """
+    Remove an item from the cart.
+
+    - **product_id**: ID of the product to remove
+
+    Returns the updated cart.
+    """
+    try:
+        return cart_service.remove_from_cart(session_id=session_id, product_id=product_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
