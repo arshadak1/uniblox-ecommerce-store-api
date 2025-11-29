@@ -194,12 +194,6 @@ class DiscountService:
         """
         logger.info("Manually generating discount code")
 
-        # Generate code
-        random_part = ''.join(
-            secrets.choice(string.ascii_uppercase + string.digits)
-            for _ in range(settings.DISCOUNT_CODE_LENGTH)
-        )
-
         discount_code = self.generate_discount_code()
 
         # Store it
