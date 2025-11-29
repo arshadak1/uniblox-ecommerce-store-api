@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     DISCOUNT_CODE_PREFIX: str = "SAVE10"
     DISCOUNT_CODE_LENGTH: int = 8
 
+    LOG_LEVEL: str = "INFO"
+
     model_config = {
         "env_file": ".env",
         "case_sensitive": True,
