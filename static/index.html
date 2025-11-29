@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniblox - E-commerce</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Uniblox</h1>
+            <p>Every 3rd order gets a 10% discount code!</p>
+            <div class="header-stats">
+                <div class="stat-badge">Total Orders: <span id="totalOrders">0</span></div>
+                <div class="stat-badge">Revenue: $<span id="totalRevenue">0.00</span></div>
+            </div>
+        </div>
+
+        <!-- Message Area -->
+        <div id="messageArea" class="message"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Products Section -->
+            <div class="products-section">
+                <h2 class="section-title">Products</h2>
+                <div id="productsGrid" class="products-grid"></div>
+            </div>
+
+            <!-- Cart Section -->
+            <div>
+                <div class="cart-section">
+                    <h2 class="section-title">Shopping Cart (<span id="cartCount">0</span>)</h2>
+
+                    <div id="cartContent">
+                        <div class="cart-empty">
+                            <p>Your cart is empty</p>
+                        </div>
+                    </div>
+
+                    <!-- Discount Code -->
+                    <div id="discountSection" class="discount-section" style="display: none;">
+                        <label for="discountCode">🎟️ Discount Code</label>
+                        <input
+                            type="text"
+                            id="discountCode"
+                            class="discount-input"
+                            placeholder="Enter discount code"
+                            style="text-transform: uppercase;"
+                        >
+                    </div>
+
+                    <!-- Cart Summary -->
+                    <div id="cartSummary" class="cart-summary" style="display: none;">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span>$<span id="subtotal">0.00</span></span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total:</span>
+                            <span>$<span id="total">0.00</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Checkout Button -->
+                    <button id="checkoutBtn" class="btn btn-success" style="display: none;">
+                        Checkout
+                    </button>
+
+                    <!-- Loading -->
+                    <div id="loading" class="loading">
+                        <div class="spinner"></div>
+                        <p>Processing...</p>
+                    </div>
+                </div>
+
+                <!-- Statistics Section -->
+                <div class="stats-section">
+                    <h2 class="section-title">Store Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Orders</div>
+                            <div class="stat-value" id="statOrders">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Items Sold</div>
+                            <div class="stat-value" id="statItems">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Revenue</div>
+                            <div class="stat-value">$<span id="statRevenue">0</span></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Discounts</div>
+                            <div class="stat-value">$<span id="statDiscounts">0</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Status -->
+        <div class="api-status">
+            Make sure the FastAPI server is running on <code>localhost:8000</code>
+        </div>
+    </div>
+
+    <script src="static/app.js"></script>
+</body>
+</html>
