@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
+    docs_url="/docs"
 )
 
 # all routers
