@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from typing import Annotated
 import uuid
 
-from app.models.schema import CartResponse, AddToCartRequest
+from app.models.schema import CartResponse, AddToCartRequest, UpdateCartRequest
 from app.services.cart_service import CartService
 from app.repositories.repository import repository
 
@@ -65,5 +65,28 @@ async def add_to_cart(request: AddToCartRequest, cart_service: Annotated[CartSer
             price=request.price,
             quantity=request.quantity
         )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/update", response_model=CartResponse)
+async def update_cart_item(request: UpdateCartRequest, cart_service: Annotated[CartService, Depends(get_cart_service)],
+                           session_id: Annotated[str, Depends(get_session_id)]) -> CartResponse:
+    """
+    Update the quantity of an item in the cart.
+
+    - **product_id**: ID of the product to update
+    - **quantity**: New quantity (must be positive)
+
+    Returns the updated cart.
+    """
+    try:
+        return cart_service.update_cart_item(
+            session_id=session_id,
+            product_id=request.product_id,
+            quantity=request.quantity
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

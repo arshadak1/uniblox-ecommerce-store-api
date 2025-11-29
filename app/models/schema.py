@@ -36,3 +36,10 @@ class AddToCartRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     price: float = Field(..., gt=0)
     quantity: int = Field(default=1, gt=0)
+
+
+class UpdateCartRequest(BaseModel):
+    """Request model for updating cart item quantity."""
+
+    product_id: int = Field(..., gt=0)
+    quantity: int = Field(..., gt=0)

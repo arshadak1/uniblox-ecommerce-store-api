@@ -37,6 +37,19 @@ class UnibloxRepository:
             self._carts[session_id].append(item)
             return self._carts[session_id].copy()
 
+    def update_cart_item(self, session_id: str, product_id: int, quantity: int) -> Optional[List[Dict]]:
+        """Update cart item quantity."""
+        with self._cart_lock:
+            if session_id not in self._carts:
+                return None
+
+            for item in self._carts[session_id]:
+                if item['product_id'] == product_id:
+                    item['quantity'] = quantity
+                    return self._carts[session_id].copy()
+
+            return None
+
 
 # Global repository instance
 repository = UnibloxRepository()
