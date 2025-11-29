@@ -90,3 +90,15 @@ async def remove_from_cart(product_id: int, cart_service: Annotated[CartService,
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("", status_code=204)
+async def clear_cart(cart_service: Annotated[CartService, Depends(get_cart_service)],
+                     session_id: Annotated[str, Depends(get_session_id)]):
+    """
+    Clears cart.
+    """
+    try:
+        cart_service.clear_cart(session_id=session_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

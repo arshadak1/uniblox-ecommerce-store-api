@@ -5,7 +5,7 @@ Handles adding, updating, and removing items from the cart.
 
 import logging
 from typing import Dict, List
-from app.repositories.repository import UnibloxRepository
+from app.repositories.repository import UnibloxRepository, repository
 from app.models.schema import CartItem, CartResponse
 
 logger = logging.getLogger(__name__)
@@ -55,12 +55,7 @@ class CartService:
             f"Product: {product_id}, Quantity: {quantity}"
         )
 
-        item = {
-            'product_id': product_id,
-            'name': name,
-            'price': round(price, 2),
-            'quantity': quantity
-        }
+        item = CartItem(product_id=product_id, name=name, price=round(price, 2), quantity=quantity)
 
         cart_items = self.repository.add_to_cart(session_id, item)
         return self._build_cart_response(cart_items)
@@ -121,17 +116,19 @@ class CartService:
 
         return self._build_cart_response(cart_items)
 
-    def _build_cart_response(self, cart_items: List[Dict]) -> CartResponse:
+    def clear_cart(self, session_id: str):
+        self.repository.clear_cart(session_id)
+
+    def _build_cart_response(self, items: List[CartItem]) -> CartResponse:
         """
         Build a CartResponse from raw cart data.
 
         Args:
-            cart_items: List of cart item dictionaries
+            items: List of cart items
 
         Returns:
             Formatted cart response
         """
-        items = [CartItem(**item) for item in cart_items]
         total_items = sum(item.quantity for item in items)
         subtotal = sum(item.price * item.quantity for item in items)
 

@@ -6,7 +6,7 @@ import logging
 from fastapi import FastAPI
 
 from app.config import settings
-from app.routers import cart
+from app.routers import cart, checkout
 
 # logging config
 logging.basicConfig(
@@ -25,6 +25,7 @@ app = FastAPI(
 
 # all routers
 app.include_router(cart.router, prefix=settings.API_PREFIX)
+app.include_router(checkout.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/", tags=["Root"])
