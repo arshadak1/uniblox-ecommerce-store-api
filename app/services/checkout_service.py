@@ -45,6 +45,8 @@ class CheckoutService:
             ValueError: If discount code is invalid or already used
         """
         items = repository.get_cart(session_id)
+        if not items:
+            raise ValueError("Cart is empty")
         logger.info(
             f"Processing checkout - Items: {len(items)}, "
             f"Discount Code: {discount_code or 'None'}"
@@ -73,12 +75,10 @@ class CheckoutService:
             discount_percent=self.discount_percentage,
             total_amount=total_amount
         )
-        if not order:
-            raise ValueError("Cart is empty")
 
         # Mark discount code as used if applied
         if discount_applied and discount_code:
-            self.repository.mark_discount_code_used(discount_code, order)
+            self.repository.mark_discount_code_used(session_id, order)
 
         # Check if this order qualifies for a new discount code
         new_discount_code = self._check_and_generate_discount(session_id)
@@ -132,9 +132,14 @@ class CheckoutService:
         Raises:
             ValueError: If code is invalid or already used
         """
+        if self.repository.is_discount_already_used(session_id, discount_code):
+            raise ValueError("Already been used")
+
         discount = self.repository.get_discount_code(session_id, discount_code)
 
+
         if not discount:
+
             raise ValueError("Invalid discount code")
 
         # Calculate discount
@@ -159,7 +164,7 @@ class CheckoutService:
         """
         # Check if this is the nth order
         user_order = repository.get_user_orders(session_id)
-        if user_order and user_order.order_count % self.nth_order == 0:
+        if user_order and user_order.order_count % self.nth_order == 0 and user_order.order_count > 0:
             discount_code = DiscountService.generate_discount_code()
             discount_code = self.repository.create_discount_code(session_id, discount_code, self.discount_percentage)
 

@@ -194,6 +194,14 @@ class UnibloxRepository:
     def get_users(self) -> List[User]:
         return self._users.values()
 
+    def is_discount_already_used(self, session_id: str, discount_code: str) -> bool:
+        if session_id not in self._discount_codes:
+            return False
+        for discount in self._discount_codes[session_id].used_discounts:
+            if discount.discount_code == discount_code:
+                return True
+        return False
+
 
 # Global repository instance
 repository = UnibloxRepository()
