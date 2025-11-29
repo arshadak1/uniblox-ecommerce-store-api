@@ -42,3 +42,28 @@ async def get_cart(cart_service: Annotated[CartService, Depends(get_cart_service
         return cart_service.get_cart(session_id=session_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/add", response_model=CartResponse, status_code=201)
+async def add_to_cart(request: AddToCartRequest, cart_service: Annotated[CartService, Depends(get_cart_service)],
+                      session_id: Annotated[str, Depends(get_session_id)]) -> CartResponse:
+    """
+    Add an item to the shopping cart.
+
+    - **product_id**: Unique identifier for the product
+    - **name**: Product name
+    - **price**: Product price (must be positive)
+    - **quantity**: Quantity to add (must be positive, defaults to 1)
+
+    Returns the updated cart with all items.
+    """
+    try:
+        return cart_service.add_to_cart(
+            session_id=session_id,
+            product_id=request.product_id,
+            name=request.name,
+            price=request.price,
+            quantity=request.quantity
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

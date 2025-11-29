@@ -27,3 +27,12 @@ class CartResponse(BaseModel):
     items: List[CartItem] = Field(default_factory=list)
     total_items: int = Field(..., ge=0)
     subtotal: float = Field(..., ge=0)
+
+
+class AddToCartRequest(BaseModel):
+    """Request model for adding items to cart."""
+
+    product_id: int = Field(..., gt=0)
+    name: str = Field(..., min_length=1, max_length=200)
+    price: float = Field(..., gt=0)
+    quantity: int = Field(default=1, gt=0)
