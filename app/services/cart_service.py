@@ -36,6 +36,35 @@ class CartService:
         cart_items = self.repository.get_cart(session_id)
         return self._build_cart_response(cart_items)
 
+    def add_to_cart(self, session_id: str, product_id: int, name: str, price: float, quantity: int) -> CartResponse:
+        """
+        Add an item to the shopping cart.
+
+        Args:
+            session_id: User session identifier
+            product_id: Product id to add
+            name: Product name
+            price: Product price
+            quantity: Quantity to add
+
+        Returns:
+            Updated cart response
+        """
+        logger.info(
+            f"Adding to cart - Session: {session_id}, "
+            f"Product: {product_id}, Quantity: {quantity}"
+        )
+
+        item = {
+            'product_id': product_id,
+            'name': name,
+            'price': round(price, 2),
+            'quantity': quantity
+        }
+
+        cart_items = self.repository.add_to_cart(session_id, item)
+        return self._build_cart_response(cart_items)
+
     def _build_cart_response(self, cart_items: List[Dict]) -> CartResponse:
         """
         Build a CartResponse from raw cart data.

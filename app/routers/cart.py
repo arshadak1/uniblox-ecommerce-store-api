@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from typing import Annotated
 import uuid
 
-from app.models.schema import CartResponse
+from app.models.schema import CartResponse, AddToCartRequest
 from app.services.cart_service import CartService
 from app.repositories.repository import repository
 
