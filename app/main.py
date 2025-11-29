@@ -6,7 +6,7 @@ import logging
 from fastapi import FastAPI
 
 from app.config import settings
-
+from app.routers import cart
 
 # logging config
 logging.basicConfig(
@@ -22,6 +22,10 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
 )
+
+# all routers
+app.include_router(cart.router, prefix=settings.API_PREFIX)
+
 
 @app.get("/", tags=["Root"])
 async def root():
