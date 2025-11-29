@@ -33,7 +33,7 @@ async def root():
         "version": settings.APP_VERSION,
         "docs": "/docs",
         "redoc": "/redoc",
-        "health": f"{settings.API_V1_PREFIX}/admin/health"
+        "health": f"{settings.API_PREFIX}/admin/health"
     }
 
 
