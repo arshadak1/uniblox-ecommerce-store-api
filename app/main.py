@@ -10,7 +10,7 @@ import os
 from starlette.responses import FileResponse
 
 from app.config import settings
-from app.routers import cart, checkout, admin
+from app.routers import cart, checkout, admin, products
 
 # logging config
 logging.basicConfig(
@@ -39,6 +39,7 @@ if os.path.exists(static_dir):
 app.include_router(cart.router, prefix=settings.API_PREFIX)
 app.include_router(checkout.router, prefix=settings.API_PREFIX)
 app.include_router(admin.router, prefix=settings.API_PREFIX)
+app.include_router(products.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/api", tags=["Root"])

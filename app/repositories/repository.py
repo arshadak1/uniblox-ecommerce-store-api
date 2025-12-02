@@ -5,12 +5,23 @@ In-memory data store for the uniblox-ecommerce-store.
 import threading
 import uuid
 from datetime import datetime
+from itertools import product
 from typing import Dict, List, Optional
+
+from app.config import settings
 from app.models.schema import CartItem, Order, UserOrder, User, UserDiscountData, Discount, UsedDiscount, \
-    AdminStoreStatisticsResponse
+    AdminStoreStatisticsResponse, Product
 
 
 class UnibloxRepository:
+    products = [
+        Product(id=1, name='MacBook Pro', price=1299.99, description='M3 chip, 16GB RAM, 512GB SSD', icon='💻'),
+        Product(id=2, name='iPhone 15 Pro', price=999.99, description='A17 Pro chip, 256GB', icon='📱'),
+        Product(id=3, name='iPad Air', price=599.99, description='M2 chip, 11-inch display', icon='📱'),
+        Product(id=4, name='AirPods Pro', price=249.99, description='Active noise cancellation', icon='🎧'),
+        Product(id=5, name='Apple Watch', price=399.99, description='Series 9, GPS + Cellular', icon='⌚'),
+        Product(id=6, name='Magic Mouse', price=79.99, description='Multi-touch surface', icon='🖱️'),
+    ]
     
     def __init__(self):
         """Initialize the repository with empty data structures."""
@@ -201,6 +212,9 @@ class UnibloxRepository:
             if discount.discount_code == discount_code:
                 return True
         return False
+
+    def get_products(self) -> List[Product]:
+        return self.products
 
 
 # Global repository instance

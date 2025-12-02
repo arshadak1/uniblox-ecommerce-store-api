@@ -129,3 +129,14 @@ class GenerateDiscountResponse(BaseModel):
 
 class GenerateDiscountRequest(BaseModel):
     session_id: str
+
+class Product(BaseModel):
+    id: int
+    name: str
+    price: float
+    description: str
+    icon: str
+
+
+class ProductsResponse(BaseModel):
+    products: List[Product]

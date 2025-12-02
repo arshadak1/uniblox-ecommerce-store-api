@@ -1,198 +1,321 @@
-// Configuration
+// ===== Configuration =====
 const API_BASE = 'http://localhost:8000/api/v1';
 
-// Products data
-const products = [
-    { id: 1, name: 'Laptop', price: 999.99, description: 'High-performance laptop' },
-    { id: 2, name: 'Mouse', price: 29.99, description: 'Wireless mouse' },
-    { id: 3, name: 'Keyboard', price: 79.99, description: 'Mechanical keyboard' },
-    { id: 4, name: 'Monitor', price: 299.99, description: '27-inch 4K monitor' },
-    { id: 5, name: 'Headphones', price: 149.99, description: 'Noise-cancelling headphones' },
-    { id: 6, name: 'Webcam', price: 89.99, description: 'HD webcam' }
-];
+// ===== Product Data =====
+let products = []
 
-// Cart state
+// ===== Application State =====
 let cart = [];
 
-// Initialize when DOM is ready
+// ===== DOM Elements =====
+const elements = {
+    cartToggle: null,
+    cartClose: null,
+    cartOverlay: null,
+    cartSidebar: null,
+    cartBadge: null,
+    cartBody: null,
+    cartFooter: null,
+    cartLoading: null,
+    checkoutBtn: null,
+    discountInput: null,
+    productsGrid: null,
+    messageContainer: null
+};
+
+
+// ===== Initialize Application =====
 document.addEventListener('DOMContentLoaded', () => {
+    initializeElements();
+    attachEventListeners();
     renderProducts();
-    fetchStatistics();
-
-    // Event listeners
-    document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
-
-    // Auto-refresh statistics every 30 seconds
-    setInterval(fetchStatistics, 30000);
+    renderCart();
+    fetchProducts();
 });
 
-/**
- * Render products grid
- */
-function renderProducts() {
-    const grid = document.getElementById('productsGrid');
-    grid.innerHTML = products.map(product => `
-        <div class="product-card">
-            <h3>${product.name}</h3>
-            <p>${product.description}</p>
-            <div class="product-price">$${product.price.toFixed(2)}</div>
-            <button class="btn btn-primary" onclick="addToCart(${product.id})">
-                ➕ Add to Cart
-            </button>
-        </div>
-    `).join('');
+async function fetchProducts() {
+    try {
+        const response = await fetch(`${API_BASE}/products`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            showMessage('error', data.detail || 'Failed to load products');
+            return;
+        }
+
+        // Assuming backend returns: [{ id, name, price, description, icon }]
+        products = data.products;
+
+        renderProducts();
+    } catch (error) {
+        console.error('Fetch products error:', error);
+        showMessage('error', 'Unable to load products. Check API connection.');
+    }
 }
 
-/**
- * Add item to cart
- * @param {number} productId - Product ID to add
- */
+// ===== Initialize DOM Elements =====
+function initializeElements() {
+    elements.cartToggle = document.getElementById('cartToggle');
+    elements.cartClose = document.getElementById('cartClose');
+    elements.cartOverlay = document.getElementById('cartOverlay');
+    elements.cartSidebar = document.getElementById('cartSidebar');
+    elements.cartBadge = document.getElementById('cartBadge');
+    elements.cartBody = document.getElementById('cartBody');
+    elements.cartFooter = document.getElementById('cartFooter');
+    elements.cartLoading = document.getElementById('cartLoading');
+    elements.checkoutBtn = document.getElementById('checkoutBtn');
+    elements.discountInput = document.getElementById('discountCode');
+    elements.productsGrid = document.getElementById('productsGrid');
+    elements.messageContainer = document.getElementById('messageArea');
+}
+
+// ===== Attach Event Listeners =====
+function attachEventListeners() {
+    elements.cartToggle.addEventListener('click', openCart);
+    elements.cartClose.addEventListener('click', closeCart);
+    elements.cartOverlay.addEventListener('click', closeCart);
+    elements.checkoutBtn.addEventListener('click', handleCheckout);
+
+    // Close cart on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeCart();
+    });
+}
+
+// ===== Cart Functions =====
+function openCart() {
+    elements.cartSidebar.classList.add('active');
+    elements.cartOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCart() {
+    elements.cartSidebar.classList.remove('active');
+    elements.cartOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ===== Render Products =====
+function renderProducts() {
+    const html = products.map(product => `
+        <div class="product-card">
+            <div class="product-image">${product.icon}</div>
+            <div class="product-content">
+                <h3 class="product-name">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-footer">
+                    <div class="product-price">$${product.price.toFixed(2)}</div>
+                    <button class="btn-add-cart" onclick="addToCart(${product.id}); event.stopPropagation();">
+                        <span>Add</span>
+                        <span>+</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    elements.productsGrid.innerHTML = html;
+}
+
+function getLoader() {
+    return '<div class="loader loader-spinner" role="status" aria-label="Loading"></div>';
+}
+
+// ===== Add to Cart =====
 async function addToCart(productId) {
     const product = products.find(p => p.id === productId);
-    if (!product) {
-        console.error('Product not found:', productId);
-        return;
+    if (!product) return;
+    const product_data = {
+        product_id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
     }
-
-    const existingItem = cart.find(item => item.product_id === productId);
-
-    if (existingItem) {
-        existingItem.quantity++;
-    } else {
-        cart.push({
-            product_id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: 1
-        });
-    }
-    const response = await fetch(`${API_BASE}/cart/add`, {
+    let loader = getLoader();
+    try {
+        const response = await fetch(`${API_BASE}/cart/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                product_id: product.id,
-                name: product.name,
-                price: product.price,
-                quantity: 1
-            })
+            body: JSON.stringify(product_data)
         });
 
         const data = await response.json();
 
-    showMessage('success', `Added ${product.name} to cart`);
-    renderCart();
+        if (response.ok) {
+            // Success
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.product_id === productId);
+
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                product_data.icon = product.icon
+                cart.push(product_data);
+            }
+
+
+            showMessage('success', `${product.name} added to cart`);
+            renderCart();
+
+            // Animate cart badge
+            elements.cartBadge.style.transform = 'scale(1.3)';
+            setTimeout(() => {
+                elements.cartBadge.style.transform = 'scale(1)';
+            }, 200);
+
+        } else {
+            // Error
+            showMessage('error', data.detail || 'Add to cart failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Add to cart error:', error);
+        showMessage('error', 'Unable to connect to server.');
+    } finally {
+        // Hide loading
+        elements.cartLoading.classList.remove('active');
+        elements.checkoutBtn.disabled = false;
+    }
 }
 
-/**
- * Update item quantity in cart
- * @param {number} productId - Product ID
- * @param {number} delta - Change in quantity (+1 or -1)
- */
-function updateQuantity(productId, delta) {
+// ===== Update Quantity =====
+async function updateQuantity(productId, change) {
     const item = cart.find(item => item.product_id === productId);
     if (!item) return;
-
-    item.quantity += delta;
+    item.quantity += change;
 
     if (item.quantity <= 0) {
         removeFromCart(productId);
-    } else {
-        renderCart();
+        return;
+    }
+    try {
+        const response = await fetch(`${API_BASE}/cart/update`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({product_id: productId, quantity: item.quantity})
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Success
+            renderCart();
+        } else {
+            // Error
+            showMessage('error', data.detail || 'Add to cart failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Add to cart error:', error);
+        showMessage('error', 'Unable to connect to server.');
+    } finally {
+        // Hide loading
+        elements.cartLoading.classList.remove('active');
+        elements.checkoutBtn.disabled = false;
     }
 }
 
-/**
- * Remove item from cart
- * @param {number} productId - Product ID to remove
- */
-function removeFromCart(productId) {
-    const product = cart.find(item => item.product_id === productId);
-    cart = cart.filter(item => item.product_id !== productId);
-
-    if (product) {
-        showMessage('success', `Removed ${product.name} from cart`);
-    }
-
+// ===== Remove from Cart =====
+async function removeFromCart(productId) {
     renderCart();
+
+    try {
+        const response = await fetch(`${API_BASE}/cart/remove/${productId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Success
+            const item = cart.find(item => item.product_id === productId);
+            cart = cart.filter(item => item.product_id !== productId);
+
+            if (item) {
+                showMessage('success', `${item.name} removed from cart`);
+            }
+            renderCart();
+        } else {
+            // Error
+            showMessage('error', data.detail || 'Checkout failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Remove cart error:', error);
+        showMessage('error', 'Unable to connect to server.');
+    } finally {
+        // Hide loading
+        elements.cartLoading.classList.remove('active');
+        elements.checkoutBtn.disabled = false;
+    }
 }
 
-/**
- * Render cart contents
- */
+// ===== Render Cart =====
 function renderCart() {
-    const cartContent = document.getElementById('cartContent');
-    const cartCount = document.getElementById('cartCount');
-    const discountSection = document.getElementById('discountSection');
-    const cartSummary = document.getElementById('cartSummary');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-
-    // Calculate totals
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Update UI
-    cartCount.textContent = totalItems;
-    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
-    document.getElementById('total').textContent = subtotal.toFixed(2);
+    // Update cart badge
+    elements.cartBadge.textContent = totalItems;
+    elements.cartBadge.style.transition = 'transform 0.2s';
+
+    // Update cart summary
+    document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('cartTotal').textContent = `$${subtotal.toFixed(2)}`;
 
     if (cart.length === 0) {
-        // Empty cart
-        cartContent.innerHTML = '<div class="cart-empty"><p>Your cart is empty</p></div>';
-        discountSection.style.display = 'none';
-        cartSummary.style.display = 'none';
-        checkoutBtn.style.display = 'none';
-    } else {
-        // Cart with items
-        cartContent.innerHTML = `
-            <div class="cart-items">
-                ${cart.map(item => `
-                    <div class="cart-item">
-                        <div class="cart-item-info">
-                            <h4>${item.name}</h4>
-                            <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
-                        </div>
-                        <div class="cart-item-controls">
-                            <div class="quantity-control">
-                                <button class="quantity-btn" onclick="updateQuantity(${item.product_id}, -1)">−</button>
-                                <span class="quantity-display">${item.quantity}</span>
-                                <button class="quantity-btn" onclick="updateQuantity(${item.product_id}, 1)">+</button>
-                            </div>
-                            <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">🗑️</button>
-                        </div>
-                    </div>
-                `).join('')}
+        // Show empty state
+        elements.cartBody.innerHTML = `
+            <div class="cart-empty">
+                <div class="empty-icon">🛒</div>
+                <p>Your cart is empty</p>
+                <small>Add some products to get started</small>
             </div>
         `;
-        discountSection.style.display = 'block';
-        cartSummary.style.display = 'block';
-        checkoutBtn.style.display = 'block';
+        elements.cartFooter.style.display = 'none';
+    } else {
+        // Show cart items
+        const itemsHtml = cart.map(item => `
+            <div class="cart-item">
+                <div class="cart-item-image">${item.icon}</div>
+                <div class="cart-item-details">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
+                    <div class="cart-item-controls">
+                        <button class="qty-btn" onclick="updateQuantity(${item.product_id}, -1)">−</button>
+                        <span class="qty-display">${item.quantity}</span>
+                        <button class="qty-btn" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+                        <button class="btn-remove" onclick="removeFromCart(${item.product_id})" title="Remove">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        elements.cartBody.innerHTML = itemsHtml;
+        elements.cartFooter.style.display = 'block';
     }
 }
 
-/**
- * Handle checkout process
- */
+// ===== Handle Checkout =====
 async function handleCheckout() {
     if (cart.length === 0) {
-        showMessage('error', 'Cart is empty');
+        showMessage('error', 'Your cart is empty');
         return;
     }
 
-    const discountCode = document.getElementById('discountCode').value.trim().toUpperCase();
-    const loading = document.getElementById('loading');
-    const checkoutBtn = document.getElementById('checkoutBtn');
+    const discountCode = elements.discountInput.value.trim().toUpperCase();
 
-    // Show loading state
-    loading.style.display = 'block';
-    checkoutBtn.disabled = true;
+    // Show loading
+    elements.cartLoading.classList.add('active');
+    elements.checkoutBtn.disabled = true;
 
     try {
-
         const response = await fetch(`${API_BASE}/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                discount_code: document.getElementById("discountCode").value
+                discount_code: discountCode || null
             })
         });
 
@@ -200,104 +323,73 @@ async function handleCheckout() {
 
         if (response.ok) {
             // Success
-            let message = `Order placed! Total: $${data.total_amount.toFixed(2)}`;
+            let message = `Order placed successfully! Total: $${data.total_amount.toFixed(2)}`;
 
             if (data.discount_applied) {
-                message += ` (Saved $${data.discount_amount.toFixed(2)})`;
+                message = `Order placed! You saved $${data.discount_amount.toFixed(2)}! Total: $${data.total_amount.toFixed(2)}`;
             }
 
             if (data.new_discount_code) {
-                message += `\n🎉 You earned a discount code: ${data.new_discount_code}`;
+                setTimeout(() => {
+                    showMessage('success', `🎉 Congratulations! You earned a discount code: ${data.new_discount_code}`);
+                }, 2000);
             }
 
             showMessage('success', message);
 
             // Clear cart
             cart = [];
-            document.getElementById('discountCode').value = '';
+            elements.discountInput.value = '';
             renderCart();
-
-            // Refresh statistics
-            fetchStatistics();
+            closeCart();
         } else {
-            // Error from server
-            showMessage('error', data.detail || 'Checkout failed');
+            // Error
+            showMessage('error', data.detail || 'Checkout failed. Please try again.');
         }
     } catch (error) {
-        // Network or other error
         console.error('Checkout error:', error);
-        showMessage('error', 'Failed to connect to server. Make sure the API is running on localhost:8000');
+        showMessage('error', 'Unable to connect to server. Please check if the API is running.');
     } finally {
-        // Hide loading state
-        loading.style.display = 'none';
-        checkoutBtn.disabled = false;
+        // Hide loading
+        elements.cartLoading.classList.remove('active');
+        elements.checkoutBtn.disabled = false;
     }
 }
 
-/**
- * Fetch and display store statistics
- */
-async function fetchStatistics() {
-    try {
-        const response = await fetch(`${API_BASE}/admin/stats`);
-
-        if (response.ok) {
-            const data = await response.json();
-
-            // Update header stats
-            document.getElementById('totalOrders').textContent = data.total_orders;
-            document.getElementById('totalRevenue').textContent = data.total_purchase_amount.toFixed(2);
-
-            // Update statistics cards
-            document.getElementById('statOrders').textContent = data.total_orders;
-            document.getElementById('statItems').textContent = data.total_items_purchased;
-            document.getElementById('statRevenue').textContent = data.total_purchase_amount.toFixed(2);
-            document.getElementById('statDiscounts').textContent = data.total_discount_amount.toFixed(2);
-        }
-    } catch (error) {
-        console.error('Failed to fetch statistics:', error);
-        // Silently fail - don't show error to user for background updates
-    }
-}
-
-/**
- * Show message to user
- * @param {string} type - 'success' or 'error'
- * @param {string} text - Message text
- */
+// ===== Show Message =====
 function showMessage(type, text) {
-    const messageArea = document.getElementById('messageArea');
-    messageArea.className = `message ${type}`;
-    messageArea.textContent = text;
-    messageArea.style.display = 'block';
+    const messageId = Date.now();
+    const icon = type === 'success' ? '✓' : '✕';
 
-    // Auto-hide after 5 seconds
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    messageDiv.innerHTML = `
+        <span class="message-icon">${icon}</span>
+        <span>${text}</span>
+    `;
+    messageDiv.id = `message-${messageId}`;
+
+    elements.messageContainer.appendChild(messageDiv);
+
+    // Auto remove after 4 seconds
     setTimeout(() => {
-        messageArea.style.display = 'none';
-    }, 5000);
+        messageDiv.style.opacity = '0';
+        messageDiv.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 300);
+    }, 4000);
 }
 
-/**
- * Format currency
- * @param {number} amount - Amount to format
- * @returns {string} Formatted currency string
- */
+// ===== Utility Functions =====
 function formatCurrency(amount) {
     return `$${amount.toFixed(2)}`;
 }
 
-/**
- * Calculate cart total
- * @returns {number} Total cart value
- */
-function calculateCartTotal() {
+function getCartTotal() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 }
 
-/**
- * Get cart item count
- * @returns {number} Total number of items in cart
- */
 function getCartItemCount() {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
 }

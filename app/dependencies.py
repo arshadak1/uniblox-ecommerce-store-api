@@ -5,6 +5,7 @@ from app.repositories.repository import repository
 from app.services.admin_service import AdminService
 from app.services.cart_service import CartService
 from app.services.checkout_service import CheckoutService, DiscountService
+from app.services.product_service import ProductService
 
 
 def get_cart_service() -> CartService:
@@ -40,3 +41,8 @@ def get_admin_service() -> AdminService:
 def get_discount_service() -> DiscountService:
     """Dependency injection for DiscountService."""
     return DiscountService(repository)
+
+
+def get_product_service() -> ProductService:
+    """Dependency injection for ProductService."""
+    return ProductService(repository)
